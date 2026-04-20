@@ -1,81 +1,30 @@
 import { Op } from 'sequelize';
 
-import { models } from '../../db/sequelize';
-import {
-  ConflictError,
-  NotFoundError,
-  UnauthorizedError,
-} from '../../utils/errors';
+import { ConflictError, NotFoundError } from '../../utils/errors';
 import {
   buildPageEnvelope,
   normalizePagination,
 } from '../../utils/pagination';
 import { assertSortableField, normalizeSortInput } from '../../utils/sort';
 import { hashPassword } from '../auth/auth.service';
-
-const { User, Post } = models;
+import type { PageQueryOptionsInput } from '../shared';
+import {
+  createUser,
+  findUserById as findUserByIdRecord,
+  findUserByIdentity,
+  listPostsForUserId,
+  listUsersPage,
+} from './user.repository';
+import type { CreateUserInput, UpdateUserInput } from './user.validation';
 
 const USER_SORT_FIELDS = ['id', 'name', 'username', 'email', 'phone', 'website'];
-
-interface PageQueryOptions {
-  paginate?: {
-    page?: number | null;
-    limit?: number | null;
-  } | null;
-  search?: {
-    q?: string | null;
-  } | null;
-  sort?: {
-    field?: string | null;
-    order?: 'ASC' | 'DESC' | null;
-  } | null;
-}
-
-interface CreateUserInput {
-  name: string;
-  username: string;
-  email: string;
-  phone?: string | null;
-  website?: string | null;
-  password?: string | null;
-}
-
-interface UpdateUserInput {
-  name?: string | null;
-  username?: string | null;
-  email?: string | null;
-  phone?: string | null;
-  website?: string | null;
-  password?: string | null;
-}
 
 async function ensureIdentityAvailable(
   email: string | undefined,
   username: string | undefined,
   excludeUserId?: number,
 ) {
-  if (!email && !username) {
-    return;
-  }
-
-  const conditions = [];
-
-  if (email) {
-    conditions.push({ email });
-  }
-
-  if (username) {
-    conditions.push({ username });
-  }
-
-  const existingUser = await User.findOne({
-    where: {
-      [Op.and]: [
-        { [Op.or]: conditions },
-        excludeUserId ? { id: { [Op.ne]: excludeUserId } } : {},
-      ],
-    },
-  });
+  const existingUser = await findUserByIdentity({ email, username }, excludeUserId);
 
   if (!existingUser) {
     return;
@@ -88,7 +37,7 @@ async function ensureIdentityAvailable(
   throw new ConflictError('A user with this username already exists.');
 }
 
-export async function listUsers(options?: PageQueryOptions | null) {
+export async function listUsers(options?: PageQueryOptionsInput) {
   const pageOptions = normalizePagination(options?.paginate);
   const { field, order } = normalizeSortInput(options?.sort, 'id');
   const sortField = assertSortableField(field, USER_SORT_FIELDS);
@@ -104,9 +53,9 @@ export async function listUsers(options?: PageQueryOptions | null) {
           { website: { [Op.iLike]: `%${searchQuery}%` } },
         ],
       }
-    : undefined;
+      : undefined;
 
-  const result = await User.findAndCountAll({
+  const result = await listUsersPage({
     where,
     limit: pageOptions.limit,
     offset: pageOptions.offset,
@@ -117,7 +66,7 @@ export async function listUsers(options?: PageQueryOptions | null) {
 }
 
 export async function getUserById(id: string | number) {
-  const user = await User.findByPk(Number(id));
+  const user = await findUserByIdRecord(id);
 
   if (!user) {
     throw new NotFoundError('User not found.');
@@ -127,16 +76,13 @@ export async function getUserById(id: string | number) {
 }
 
 export async function listPostsForUser(userId: number) {
-  return Post.findAll({
-    where: { userId },
-    order: [['id', 'ASC']],
-  });
+  return listPostsForUserId(userId);
 }
 
 export async function createUserRecord(input: CreateUserInput) {
   await ensureIdentityAvailable(input.email, input.username);
 
-  return User.create({
+  return createUser({
     name: input.name,
     username: input.username,
     email: input.email,
@@ -188,14 +134,3 @@ export async function deleteUserRecord(id: string | number) {
     message: `User ${user.id} deleted successfully.`,
   };
 }
-
-export function requireCurrentUser<TUser extends { id: number } | null>(
-  currentUser: TUser,
-): Exclude<TUser, null> {
-  if (!currentUser) {
-    throw new UnauthorizedError();
-  }
-
-  return currentUser as Exclude<TUser, null>;
-}
-

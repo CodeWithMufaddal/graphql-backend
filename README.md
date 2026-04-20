@@ -57,6 +57,12 @@ npm run dev
 - GraphQL: `http://localhost:4000/graphql`
 - Health: `http://localhost:4000/health`
 - Metrics: `http://localhost:4000/metrics`
+- Apollo Sandbox can connect to the local endpoint if `https://studio.apollographql.com` is included in `CORS_ALLOWED_ORIGINS`.
+
+## Logging
+
+- Structured app and request logs are written to `logs/app.log`.
+- Terminal output is kept minimal and only prints error/failure and shutdown lifecycle messages.
 
 ## Seed Login
 
@@ -79,3 +85,16 @@ npm run dev
 - pgAdmin is enough to create the database and inspect tables.
 - If the connection fails, update `.env` so `DATABASE_HOST`, `DATABASE_PORT`, `DATABASE_USER`, and `DATABASE_PASSWORD` match your local PostgreSQL instance.
 - GraphQL runs at `http://localhost:4000/graphql` by default.
+
+## Schema Sync Mode (Model-First, Dev)
+
+You can let Sequelize auto-sync DB schema from models on server start using `DATABASE_SCHEMA_SYNC_MODE`:
+
+- `off`: no automatic schema changes (migration-first)
+- `alter`: add/modify columns and tables where possible (does not drop removed columns)
+- `alter_drop`: add/modify and also drop columns/tables that no longer exist in models
+- `force`: drop and recreate tables every start
+
+Important:
+- Auto-sync is allowed only outside production.
+- `alter_drop` and `force` are destructive and can remove data.

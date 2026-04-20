@@ -2,9 +2,11 @@ import { app } from './app';
 import { env } from './config/env';
 import { logger } from './config/logger';
 import { sequelize } from './db/sequelize';
+import { syncSchemaIfEnabled } from './db/sync';
 
 async function startServer() {
   await sequelize.authenticate();
+  await syncSchemaIfEnabled();
 
   const server = app.listen(env.PORT, () => {
     logger.info('GraphQL backend is running.', {

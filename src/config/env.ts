@@ -24,12 +24,17 @@ const envSchema = z.object({
   DATABASE_POOL_MIN: z.coerce.number().int().min(0).default(0),
   DATABASE_POOL_ACQUIRE_MS: z.coerce.number().int().positive().default(30000),
   DATABASE_POOL_IDLE_MS: z.coerce.number().int().positive().default(10000),
+  DATABASE_SCHEMA_SYNC_MODE: z
+    .enum(['off', 'alter', 'alter_drop', 'force'])
+    .default('off'),
   JWT_SECRET: z.string().min(16),
   JWT_EXPIRES_IN: z.string().min(2).default('1d'),
   BCRYPT_ROUNDS: z.coerce.number().int().min(8).max(14).default(10),
   CORS_ALLOWED_ORIGINS: z
     .string()
-    .default('http://localhost:3000,http://localhost:5173'),
+    .default(
+      'http://localhost:3000,http://localhost:5173,https://studio.apollographql.com',
+    ),
   ALLOW_LOCALHOST_ORIGINS: z
     .enum(['true', 'false'])
     .default('true')

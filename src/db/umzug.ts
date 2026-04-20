@@ -4,11 +4,16 @@ import { SequelizeStorage, Umzug } from 'umzug';
 
 import { sequelize } from './sequelize';
 
-const runtimeExtension = __filename.endsWith('.ts') ? 'ts' : 'js';
+function toGlobPath(...segments: string[]) {
+  return path.join(...segments).replace(/\\/g, '/');
+}
+
+const migrationGlob = toGlobPath(__dirname, 'migrations', '*.{js,ts}');
+const seederGlob = toGlobPath(__dirname, 'seeders', '*.{js,ts}');
 
 export const migrator = new Umzug({
   migrations: {
-    glob: path.join(__dirname, 'migrations', `*.${runtimeExtension}`),
+    glob: migrationGlob,
   },
   context: sequelize.getQueryInterface(),
   storage: new SequelizeStorage({
@@ -21,7 +26,7 @@ export const migrator = new Umzug({
 
 export const seeder = new Umzug({
   migrations: {
-    glob: path.join(__dirname, 'seeders', `*.${runtimeExtension}`),
+    glob: seederGlob,
   },
   context: sequelize.getQueryInterface(),
   storage: new SequelizeStorage({
@@ -31,4 +36,3 @@ export const seeder = new Umzug({
   }),
   logger: undefined,
 });
-

@@ -15,7 +15,8 @@
     "db:migrate:undo": "tsx src/db/scripts/migrate.ts down",
     "db:seed": "tsx src/db/scripts/seed.ts up",
     "db:seed:undo": "tsx src/db/scripts/seed.ts down",
-    "db:setup": "npm run db:migrate && npm run db:seed"
+    "db:setup": "npm run db:migrate && npm run db:seed",
+    "gen:module": "node scripts/gen_graphql_module.js"
   },
   "dependencies": {
     "@graphql-tools/schema": "^10.0.32",

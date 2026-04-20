@@ -1,62 +1,32 @@
 import { Op } from 'sequelize';
-import type { Order } from 'sequelize';
 
-import { models } from '../../db/sequelize';
 import { NotFoundError } from '../../utils/errors';
 import {
   buildPageEnvelope,
   normalizePagination,
 } from '../../utils/pagination';
 import { assertSortableField, normalizeSortInput } from '../../utils/sort';
-
-const { Comment, Post, User } = models;
+import type { PageQueryOptionsInput } from '../shared';
+import { findUserById } from '../users/user.repository';
+import {
+  User,
+  buildPostOrder,
+  createPost,
+  findPostById,
+  listCommentsForPostId,
+  listPostsPage,
+} from './post.repository';
+import type { CreatePostInput, UpdatePostInput } from './post.validation';
 
 const POST_SORT_FIELDS = ['id', 'title', 'body', 'user.name', 'user.username'];
 
-interface PageQueryOptions {
-  paginate?: {
-    page?: number | null;
-    limit?: number | null;
-  } | null;
-  search?: {
-    q?: string | null;
-  } | null;
-  sort?: {
-    field?: string | null;
-    order?: 'ASC' | 'DESC' | null;
-  } | null;
-}
-
-interface CreatePostInput {
-  title: string;
-  body: string;
-  userId?: string | number | null;
-}
-
-interface UpdatePostInput {
-  title?: string | null;
-  body?: string | null;
-  userId?: string | number | null;
-}
-
-function getPostOrder(field: string, order: 'ASC' | 'DESC') {
-  switch (field) {
-    case 'user.name':
-      return [[{ model: User, as: 'user' }, 'name', order]] as Order;
-    case 'user.username':
-      return [[{ model: User, as: 'user' }, 'username', order]] as Order;
-    default:
-      return [[field, order]] as Order;
-  }
-}
-
-export async function listPosts(options?: PageQueryOptions | null) {
+export async function listPosts(options?: PageQueryOptionsInput) {
   const pageOptions = normalizePagination(options?.paginate);
   const { field, order } = normalizeSortInput(options?.sort, 'id');
   const sortField = assertSortableField(field, POST_SORT_FIELDS);
   const searchQuery = options?.search?.q?.trim();
 
-  const result = await Post.findAndCountAll({
+  const result = await listPostsPage({
     where: searchQuery
       ? {
           [Op.or]: [
@@ -76,7 +46,7 @@ export async function listPosts(options?: PageQueryOptions | null) {
     ],
     limit: pageOptions.limit,
     offset: pageOptions.offset,
-    order: getPostOrder(sortField, order),
+    order: buildPostOrder(sortField, order),
     distinct: true,
   });
 
@@ -84,14 +54,7 @@ export async function listPosts(options?: PageQueryOptions | null) {
 }
 
 export async function getPostById(id: string | number) {
-  const post = await Post.findByPk(Number(id), {
-    include: [
-      {
-        model: User,
-        as: 'user',
-      },
-    ],
-  });
+  const post = await findPostById(id);
 
   if (!post) {
     throw new NotFoundError('Post not found.');
@@ -101,10 +64,7 @@ export async function getPostById(id: string | number) {
 }
 
 export async function listCommentsForPost(postId: number) {
-  return Comment.findAll({
-    where: { postId },
-    order: [['id', 'ASC']],
-  });
+  return listCommentsForPostId(postId);
 }
 
 export async function createPostRecord(
@@ -112,13 +72,13 @@ export async function createPostRecord(
   fallbackUserId: number,
 ) {
   const userId = Number(input.userId ?? fallbackUserId);
-  const user = await User.findByPk(userId);
+  const user = await findUserById(userId);
 
   if (!user) {
     throw new NotFoundError('Post author not found.');
   }
 
-  return Post.create({
+  return createPost({
     title: input.title,
     body: input.body,
     userId,
@@ -137,7 +97,7 @@ export async function updatePostRecord(id: string | number, input: UpdatePostInp
   }
 
   if (input.userId !== undefined && input.userId !== null) {
-    const nextUser = await User.findByPk(Number(input.userId));
+    const nextUser = await findUserById(Number(input.userId));
 
     if (!nextUser) {
       throw new NotFoundError('Post author not found.');

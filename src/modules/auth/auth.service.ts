@@ -1,32 +1,22 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import type { Request } from 'express';
-import { Op } from 'sequelize';
 
 import { env } from '../../config/env';
-import { models } from '../../db/sequelize';
 import { ConflictError, UnauthorizedError } from '../../utils/errors';
+import {
+  createUser,
+  findUserByEmail,
+  findUserById,
+  findUserByIdentity,
+} from '../users/user.repository';
 
-const { User } = models;
+import type { LoginInput, RegisterInput } from './auth.validation';
 
 interface AuthTokenPayload {
   sub: number;
   email: string;
   username: string;
-}
-
-interface RegisterUserInput {
-  name: string;
-  username: string;
-  email: string;
-  password: string;
-  phone?: string | null;
-  website?: string | null;
-}
-
-interface LoginInput {
-  email: string;
-  password: string;
 }
 
 function issueToken(payload: AuthTokenPayload) {
@@ -40,11 +30,7 @@ export async function hashPassword(password: string) {
 }
 
 async function ensureUniqueIdentity(email: string, username: string) {
-  const existingUser = await User.findOne({
-    where: {
-      [Op.or]: [{ email }, { username }],
-    },
-  });
+  const existingUser = await findUserByIdentity({ email, username });
 
   if (!existingUser) {
     return;
@@ -57,11 +43,11 @@ async function ensureUniqueIdentity(email: string, username: string) {
   throw new ConflictError('A user with this username already exists.');
 }
 
-export async function registerUser(input: RegisterUserInput) {
+export async function registerUser(input: RegisterInput) {
   await ensureUniqueIdentity(input.email, input.username);
 
   const passwordHash = await hashPassword(input.password);
-  const user = await User.create({
+  const user = await createUser({
     name: input.name,
     username: input.username,
     email: input.email,
@@ -81,11 +67,7 @@ export async function registerUser(input: RegisterUserInput) {
 }
 
 export async function loginUser(input: LoginInput) {
-  const user = await User.findOne({
-    where: {
-      email: input.email,
-    },
-  });
+  const user = await findUserByEmail(input.email);
 
   if (!user?.passwordHash) {
     throw new UnauthorizedError('Invalid email or password.');
@@ -129,7 +111,7 @@ export async function getCurrentUser(request: Request) {
       return null;
     }
 
-    return User.findByPk(userId);
+    return findUserById(userId);
   } catch {
     return null;
   }

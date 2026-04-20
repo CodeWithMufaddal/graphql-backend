@@ -1,4 +1,14 @@
+import fs from 'node:fs';
+import path from 'node:path';
+
 type LogLevel = 'debug' | 'info' | 'warn' | 'error';
+
+const LOGS_DIR = path.resolve(process.cwd(), 'logs');
+const LOG_FILE_PATH = path.join(LOGS_DIR, 'app.log');
+const TERMINAL_MESSAGES = new Set(['Shutting down server.', 'Failed to start server.']);
+
+fs.mkdirSync(LOGS_DIR, { recursive: true });
+const logFileStream = fs.createWriteStream(LOG_FILE_PATH, { flags: 'a' });
 
 function write(level: LogLevel, message: string, meta?: Record<string, unknown>) {
   const payload = {
@@ -9,14 +19,17 @@ function write(level: LogLevel, message: string, meta?: Record<string, unknown>)
   };
 
   const output = JSON.stringify(payload);
+  logFileStream.write(`${output}\n`);
 
-  if (level === 'error') {
-    console.error(output);
+  const shouldPrintToTerminal =
+    level === 'error' || TERMINAL_MESSAGES.has(message);
+
+  if (!shouldPrintToTerminal) {
     return;
   }
 
-  if (level === 'warn') {
-    console.warn(output);
+  if (level === 'error') {
+    console.error(output);
     return;
   }
 
@@ -40,4 +53,3 @@ export const morganStream = {
       line: message.trim(),
     }),
 };
-
