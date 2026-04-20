@@ -1,12 +1,14 @@
 import {
-  CreationOptional,
   DataTypes,
+  Model,
+  type Sequelize,
+} from 'sequelize';
+import type {
+  CreationOptional,
+  ForeignKey,
   InferAttributes,
   InferCreationAttributes,
-  Model,
-  type ForeignKey,
-  type NonAttribute,
-  type Sequelize,
+  NonAttribute,
 } from 'sequelize';
 
 import type { Comment } from './comment.model';
@@ -71,4 +73,3 @@ export function initPostModel(sequelize: Sequelize) {
 
   return Post;
 }
-

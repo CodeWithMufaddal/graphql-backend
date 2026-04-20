@@ -2,10 +2,10 @@ import type { Request } from 'express';
 
 import { getCurrentUser } from '../modules/auth/auth.service';
 
-export interface GraphQLContext {
+export type GraphQLContext = Record<PropertyKey, unknown> & {
   requestId: string;
   currentUser: Awaited<ReturnType<typeof getCurrentUser>>;
-}
+};
 
 export async function buildGraphQLContext(
   request: Request,
@@ -15,4 +15,3 @@ export async function buildGraphQLContext(
     currentUser: await getCurrentUser(request),
   };
 }
-

@@ -1,4 +1,5 @@
 import { Op } from 'sequelize';
+import type { Order } from 'sequelize';
 
 import { models } from '../../db/sequelize';
 import { NotFoundError } from '../../utils/errors';
@@ -41,11 +42,11 @@ interface UpdatePostInput {
 function getPostOrder(field: string, order: 'ASC' | 'DESC') {
   switch (field) {
     case 'user.name':
-      return [[{ model: User, as: 'user' }, 'name', order]] as const;
+      return [[{ model: User, as: 'user' }, 'name', order]] as Order;
     case 'user.username':
-      return [[{ model: User, as: 'user' }, 'username', order]] as const;
+      return [[{ model: User, as: 'user' }, 'username', order]] as Order;
     default:
-      return [[field, order]] as const;
+      return [[field, order]] as Order;
   }
 }
 
@@ -158,4 +159,3 @@ export async function deletePostRecord(id: string | number) {
     message: `Post ${post.id} deleted successfully.`,
   };
 }
-

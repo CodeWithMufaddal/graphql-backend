@@ -16,6 +16,14 @@ const envSchema = z.object({
     .enum(['true', 'false'])
     .default('false')
     .transform((value) => value === 'true'),
+  DATABASE_SSL: z
+    .enum(['true', 'false'])
+    .default('false')
+    .transform((value) => value === 'true'),
+  DATABASE_POOL_MAX: z.coerce.number().int().positive().default(10),
+  DATABASE_POOL_MIN: z.coerce.number().int().min(0).default(0),
+  DATABASE_POOL_ACQUIRE_MS: z.coerce.number().int().positive().default(30000),
+  DATABASE_POOL_IDLE_MS: z.coerce.number().int().positive().default(10000),
   JWT_SECRET: z.string().min(16),
   JWT_EXPIRES_IN: z.string().min(2).default('1d'),
   BCRYPT_ROUNDS: z.coerce.number().int().min(8).max(14).default(10),
@@ -46,4 +54,3 @@ if (!parsedEnv.success) {
 }
 
 export const env = parsedEnv.data;
-

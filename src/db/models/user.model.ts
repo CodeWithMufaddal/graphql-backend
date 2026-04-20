@@ -1,11 +1,13 @@
 import {
-  CreationOptional,
   DataTypes,
+  Model,
+  type Sequelize,
+} from 'sequelize';
+import type {
+  CreationOptional,
   InferAttributes,
   InferCreationAttributes,
-  Model,
-  type NonAttribute,
-  type Sequelize,
+  NonAttribute,
 } from 'sequelize';
 
 import type { Post } from './post.model';
@@ -83,4 +85,3 @@ export function initUserModel(sequelize: Sequelize) {
 
   return User;
 }
-

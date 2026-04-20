@@ -1,7 +1,15 @@
 import compression from 'compression';
 import cors from 'cors';
-import express, { type NextFunction, type Request, type Response } from 'express';
-import { graphqlHTTP } from 'express-graphql';
+import express, {
+  type NextFunction,
+  type Request,
+  type RequestHandler,
+  type Response,
+} from 'express';
+import {
+  createHandler,
+  type HandlerOptions as GraphQLHttpHandlerOptions,
+} from 'graphql-http/lib/use/express';
 import helmet from 'helmet';
 import morgan from 'morgan';
 
@@ -13,8 +21,7 @@ import {
   graphQlRequestDurationMs,
   metricsHandler,
 } from './config/metrics';
-import { buildGraphQLContext } from './graphql/context';
-import { formatGraphQLError } from './graphql/formatError';
+import { buildGraphQLContext, type GraphQLContext } from './graphql/context';
 import { schema } from './graphql/schema';
 import { AppError } from './utils/errors';
 import { createRequestId } from './utils/request';
@@ -60,27 +67,25 @@ app.use(env.GRAPHQL_PATH, (request, response, next) => {
   next();
 });
 
-app.use(
-  env.GRAPHQL_PATH,
-  graphqlHTTP(async (request: Request) => {
-    const context = await buildGraphQLContext(request);
+const graphQlHandlerOptions: GraphQLHttpHandlerOptions<GraphQLContext> = {
+  schema,
+  context: async (request) => buildGraphQLContext(request.raw as Request),
+};
 
-    return {
-      schema,
-      context,
-      graphiql: env.NODE_ENV !== 'production',
-      customFormatErrorFn: (error) => formatGraphQLError(error, context.requestId),
-    };
-  }),
+const graphQlHandler: RequestHandler = createHandler<GraphQLContext>(
+  graphQlHandlerOptions,
 );
+
+app.all(env.GRAPHQL_PATH, graphQlHandler);
 
 app.use(
   (
     error: Error,
     request: Request,
     response: Response,
-    _next: NextFunction,
+    next: NextFunction,
   ) => {
+    void next;
     const requestId = request.requestId ?? 'unknown';
 
     if (error instanceof AppError) {
@@ -117,4 +122,3 @@ app.use(
     });
   },
 );
-

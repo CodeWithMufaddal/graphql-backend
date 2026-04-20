@@ -1,4 +1,3 @@
-import { models } from '../db/sequelize';
 import { loginUser, registerUser } from '../modules/auth/auth.service';
 import {
   createPostRecord,
@@ -19,6 +18,8 @@ import {
 } from '../modules/users/user.service';
 import { AppError } from '../utils/errors';
 import { parseInput } from '../utils/validation';
+import type { Comment } from '../db/models/comment.model';
+import type { User } from '../db/models/user.model';
 
 import type { GraphQLContext } from './context';
 import {
@@ -30,8 +31,6 @@ import {
   updatePostInputSchema,
   updateUserInputSchema,
 } from './validation';
-
-const { Comment, User } = models;
 
 function toIsoString(value: Date) {
   return value.toISOString();
@@ -54,11 +53,8 @@ export const resolvers = {
       uptimeSeconds: process.uptime(),
       timestamp: new Date().toISOString(),
     }),
-    me: async (
-      _parent: unknown,
-      _args: unknown,
-      context: GraphQLContext,
-    ) => context.currentUser,
+    me: (_parent: unknown, _args: unknown, context: GraphQLContext) =>
+      context.currentUser,
     users: async (_parent: unknown, args: { options?: unknown }) =>
       listUsers(parseInput(pageQueryOptionsSchema, args.options)),
     user: async (_parent: unknown, args: { id: string }) => getUserById(args.id),
@@ -122,23 +118,20 @@ export const resolvers = {
     },
   },
   User: {
-    posts: async (user: InstanceType<typeof User>) => listPostsForUser(user.id),
-    createdAt: (user: InstanceType<typeof User>) => toIsoString(user.createdAt),
-    updatedAt: (user: InstanceType<typeof User>) => toIsoString(user.updatedAt),
+    posts: async (user: User) => listPostsForUser(user.id),
+    createdAt: (user: User) => toIsoString(user.createdAt),
+    updatedAt: (user: User) => toIsoString(user.updatedAt),
   },
   Post: {
-    user: async (post: { user?: InstanceType<typeof User>; userId: number }) =>
+    user: async (post: { user?: User; userId: number }) =>
       post.user ?? getUserById(post.userId),
     comments: async (post: { id: number }) => listCommentsForPost(post.id),
     createdAt: (post: { createdAt: Date }) => toIsoString(post.createdAt),
     updatedAt: (post: { updatedAt: Date }) => toIsoString(post.updatedAt),
   },
   Comment: {
-    post: async (comment: InstanceType<typeof Comment>) => getPostById(comment.postId),
-    createdAt: (comment: InstanceType<typeof Comment>) =>
-      toIsoString(comment.createdAt),
-    updatedAt: (comment: InstanceType<typeof Comment>) =>
-      toIsoString(comment.updatedAt),
+    post: async (comment: Comment) => getPostById(comment.postId),
+    createdAt: (comment: Comment) => toIsoString(comment.createdAt),
+    updatedAt: (comment: Comment) => toIsoString(comment.updatedAt),
   },
 };
-

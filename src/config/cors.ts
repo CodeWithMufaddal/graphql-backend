@@ -12,9 +12,11 @@ function isLocalOrigin(origin: string) {
 }
 
 export const corsOptionsDelegate: CorsOptionsDelegate<Request> = (
-  requestOrigin,
+  request,
   callback,
 ) => {
+  const requestOrigin = request.header('Origin');
+
   if (!requestOrigin) {
     callback(null, { origin: true });
     return;
@@ -34,4 +36,3 @@ export const corsOptionsDelegate: CorsOptionsDelegate<Request> = (
     credentials: true,
   });
 };
-

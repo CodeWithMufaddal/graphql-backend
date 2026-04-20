@@ -1,4 +1,10 @@
 export class AppError extends Error {
+  public readonly extensions: {
+    code: string;
+    statusCode: number;
+    details?: unknown;
+  };
+
   constructor(
     public readonly code: string,
     message: string,
@@ -7,6 +13,11 @@ export class AppError extends Error {
   ) {
     super(message);
     this.name = 'AppError';
+    this.extensions = {
+      code,
+      statusCode,
+      ...(details === undefined ? {} : { details }),
+    };
   }
 }
 
@@ -27,4 +38,3 @@ export class ConflictError extends AppError {
     super('CONFLICT', message, 409);
   }
 }
-

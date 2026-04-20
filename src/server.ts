@@ -14,12 +14,13 @@ async function startServer() {
     });
   });
 
-  const shutdown = async (signal: string) => {
+  const shutdown = (signal: string) => {
     logger.info('Shutting down server.', { signal });
 
-    server.close(async () => {
-      await sequelize.close();
-      process.exit(0);
+    server.close(() => {
+      void sequelize.close().then(() => {
+        process.exit(0);
+      });
     });
   };
 

@@ -9,7 +9,8 @@ async function main() {
     await sequelize.authenticate();
 
     if (action === 'down') {
-      const [lastMigration] = await migrator.executed();
+      const executedMigrations = await migrator.executed();
+      const [lastMigration] = [...executedMigrations].reverse();
 
       if (!lastMigration) {
         logger.info('No migration to roll back.');
@@ -36,4 +37,3 @@ void main().catch((error: unknown) => {
   });
   process.exitCode = 1;
 });
-

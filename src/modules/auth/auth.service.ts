@@ -31,7 +31,7 @@ interface LoginInput {
 
 function issueToken(payload: AuthTokenPayload) {
   return jwt.sign(payload, env.JWT_SECRET, {
-    expiresIn: env.JWT_EXPIRES_IN,
+    expiresIn: env.JWT_EXPIRES_IN as jwt.SignOptions['expiresIn'],
   });
 }
 
@@ -117,10 +117,20 @@ export async function getCurrentUser(request: Request) {
   const token = authorization.slice('Bearer '.length).trim();
 
   try {
-    const payload = jwt.verify(token, env.JWT_SECRET) as AuthTokenPayload;
-    return User.findByPk(payload.sub);
+    const payload = jwt.verify(token, env.JWT_SECRET);
+
+    if (typeof payload === 'string') {
+      return null;
+    }
+
+    const userId = Number(payload.sub);
+
+    if (Number.isNaN(userId)) {
+      return null;
+    }
+
+    return User.findByPk(userId);
   } catch {
     return null;
   }
 }
-

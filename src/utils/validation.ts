@@ -10,9 +10,13 @@ export function parseInput<TSchema extends z.ZodTypeAny>(
 
   if (!result.success) {
     const flattened = z.flattenError(result.error);
-    const fieldErrors = Object.entries(flattened.fieldErrors).flatMap(
+    const fieldErrorsRecord = flattened.fieldErrors as Record<
+      string,
+      string[] | undefined
+    >;
+    const fieldErrors = Object.entries(fieldErrorsRecord).flatMap(
       ([field, messages]) =>
-        (messages ?? []).map((message) => ({
+        (messages ?? []).map((message: string) => ({
           field,
           message,
         })),
@@ -28,4 +32,3 @@ export function parseInput<TSchema extends z.ZodTypeAny>(
 
   return result.data;
 }
-
