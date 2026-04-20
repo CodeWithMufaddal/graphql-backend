@@ -1,0 +1,67 @@
+# GraphQL Backend Starter
+
+Backend foundation for a local-first GraphQL API with:
+
+- Express
+- GraphQL
+- PostgreSQL
+- Sequelize
+- Simple JWT auth
+- Seed data
+- Basic lint, format, test, logging, and metrics setup
+
+## Decisions Locked In
+
+- Integer `id` fields only
+- No `company` or `address` modeling for now
+- Simple access token auth only for this phase
+- Local PostgreSQL using database `graphql-db` and user `postgres`
+- Localhost-friendly CORS defaults for frontend development
+
+## Quick Start
+
+1. Copy `.env.example` to `.env`
+2. Start Postgres:
+
+```bash
+docker compose up -d
+```
+
+3. Install packages:
+
+```bash
+npm install
+```
+
+4. Run migrations and seed data:
+
+```bash
+npm run db:setup
+```
+
+5. Start the API:
+
+```bash
+npm run dev
+```
+
+## Endpoints
+
+- GraphQL: `http://localhost:4000/graphql`
+- Health: `http://localhost:4000/health`
+- Metrics: `http://localhost:4000/metrics`
+
+## Seed Login
+
+- Email: `owner@localhost.dev`
+- Password: `password123`
+
+## Core Scripts
+
+- `npm run dev`
+- `npm run build`
+- `npm run lint`
+- `npm run test`
+- `npm run db:migrate`
+- `npm run db:seed`
+
